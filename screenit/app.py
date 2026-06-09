@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import ctypes
+import logging
 from ctypes import wintypes
 
-from PySide6.QtCore import QAbstractNativeEventFilter
+from PySide6.QtCore import QAbstractNativeEventFilter, QTimer
 from PySide6.QtWidgets import (
     QApplication,
     QInputDialog,
@@ -60,18 +61,18 @@ class ScreenItApp:
         self.tray.setToolTip(f"ScreenIt {__version__}")
 
         menu = QMenu()
-        self._capture_action = menu.addAction(f"Capture region\t{self.config.hotkey}")
+        self._capture_action = menu.addAction(f"Снять область  ({self.config.hotkey})")
         self._capture_action.triggered.connect(self.capture)
         menu.addSeparator()
 
-        self._startup_action = menu.addAction("Run at startup")
+        self._startup_action = menu.addAction("Запускать при старте Windows")
         self._startup_action.setCheckable(True)
         self._startup_action.setChecked(autostart.is_enabled())
         self._startup_action.toggled.connect(autostart.set_enabled)
 
-        menu.addAction("Change hotkey...").triggered.connect(self._change_hotkey)
+        menu.addAction("Сменить горячую клавишу…").triggered.connect(self._change_hotkey)
         menu.addSeparator()
-        menu.addAction("Quit").triggered.connect(self.quit)
+        menu.addAction("Выход").triggered.connect(self.quit)
 
         self.tray.setContextMenu(menu)
         self.tray.activated.connect(self._on_tray_activated)
@@ -114,7 +115,7 @@ class ScreenItApp:
         self.config.hotkey = text.strip()
         if self._register_hotkey():
             self.config.save()
-            self._capture_action.setText(f"Capture region\t{self.config.hotkey}")
+            self._capture_action.setText(f"Снять область  ({self.config.hotkey})")
         else:
             self.config.hotkey = old
             self._register_hotkey()
@@ -123,14 +124,23 @@ class ScreenItApp:
     def capture(self) -> None:
         if self._overlay is not None:
             return
-        shot = grab_virtual_screen()
-        self._overlay = SelectionOverlay(
-            shot, self.config.magnifier_size, self.config.magnifier_zoom
-        )
-        self._overlay.regionSelected.connect(self._on_region)
-        self._overlay.cancelled.connect(self._clear_overlay)
-        self._overlay.destroyed.connect(self._clear_overlay)
-        self._overlay.show_overlay()
+        try:
+            logging.info("capture: grabbing screen")
+            shot = grab_virtual_screen()
+            self._overlay = SelectionOverlay(
+                shot, self.config.magnifier_size, self.config.magnifier_zoom
+            )
+            self._overlay.regionSelected.connect(self._on_region)
+            self._overlay.cancelled.connect(self._clear_overlay)
+            self._overlay.destroyed.connect(self._clear_overlay)
+            self._overlay.show_overlay()
+            logging.info("capture: overlay shown %sx%s", shot.width, shot.height)
+        except Exception:
+            logging.exception("capture failed")
+            self._overlay = None
+            self.tray.showMessage(
+                "ScreenIt", "Ошибка захвата экрана — см. screenit.log", self._icon, 4000
+            )
 
     def _on_region(self, rect) -> None:
         assert self._overlay is not None
@@ -155,5 +165,16 @@ class ScreenItApp:
         self.tray.hide()
         self.qt.quit()
 
+    def _greet(self) -> None:
+        self.tray.showMessage(
+            "ScreenIt запущен",
+            f"{self.config.hotkey} — снимок области в буфер обмена.\n"
+            "Иконка в трее (нажми стрелку ^, если её не видно).",
+            self._icon,
+            5000,
+        )
+
     def run(self) -> int:
+        # Fire once the event loop is up, so the balloon actually shows.
+        QTimer.singleShot(700, self._greet)
         return self.qt.exec()

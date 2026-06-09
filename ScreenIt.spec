@@ -5,7 +5,7 @@ from PyInstaller.utils.hooks import collect_submodules
 block_cipher = None
 
 a = Analysis(
-    ["screenit/__main__.py"],
+    ["app_entry.py"],
     pathex=[],
     binaries=[],
     datas=[("assets/icon.ico", "assets")],

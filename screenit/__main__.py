@@ -3,10 +3,31 @@
 from __future__ import annotations
 
 import ctypes
+import logging
 import os
 import sys
 
 ERROR_ALREADY_EXISTS = 183
+
+
+def _setup_logging() -> None:
+    """Log to %APPDATA%\\ScreenIt\\screenit.log and catch unhandled errors.
+
+    A windowed (no-console) build has no stderr, so without this any crash is
+    invisible. The log makes problems diagnosable in the field.
+    """
+    from .paths import config_dir
+
+    logging.basicConfig(
+        filename=str(config_dir() / "screenit.log"),
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
+
+    def _hook(exc_type, exc, tb):
+        logging.error("Unhandled exception", exc_info=(exc_type, exc, tb))
+
+    sys.excepthook = _hook
 
 
 def _ensure_single_instance() -> None:
@@ -38,8 +59,10 @@ def _setup_dpi() -> None:
 
 
 def main() -> int:
+    _setup_logging()
     _ensure_single_instance()
     _setup_dpi()
+    logging.info("ScreenIt starting (frozen=%s)", getattr(sys, "frozen", False))
     from .app import ScreenItApp
 
     return ScreenItApp().run()

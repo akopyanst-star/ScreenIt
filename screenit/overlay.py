@@ -103,7 +103,12 @@ class SelectionOverlay(QWidget):
     def _selection_rect(self) -> QRect:
         if self._origin is None:
             return QRect()
-        return QRect(self._origin, self._cursor).normalized().intersected(self.rect())
+        # Build from an explicit size so a 200px drag yields exactly 200px.
+        # (QRect(p1, p2) treats both corners as inclusive -> off by one.)
+        x1, y1 = self._origin.x(), self._origin.y()
+        x2, y2 = self._cursor.x(), self._cursor.y()
+        left, top = min(x1, x2), min(y1, y2)
+        return QRect(left, top, abs(x2 - x1), abs(y2 - y1)).intersected(self.rect())
 
     # ------------------------------------------------------------------ paint
     def paintEvent(self, _event) -> None:
