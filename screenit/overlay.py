@@ -37,7 +37,7 @@ class SelectionOverlay(QWidget):
 
     def __init__(self, shot: Screenshot, magnifier_size: int, magnifier_zoom: int):
         super().__init__()
-        self._shot = shot
+        self.shot = shot
         self._image = QImage(
             shot.image.tobytes("raw", "RGB"),
             shot.width,
@@ -199,7 +199,7 @@ class SelectionOverlay(QWidget):
         hex_color = f"#{color.red():02X}{color.green():02X}{color.blue():02X}"
 
         # Desktop coordinates (account for a negative virtual-screen origin).
-        dx, dy = cx + self._shot.left, cy + self._shot.top
+        dx, dy = cx + self.shot.left, cy + self.shot.top
         line1 = f"{dx}, {dy}   {hex_color}"
         if self._selecting and self._origin is not None:
             rect = self._selection_rect()

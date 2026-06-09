@@ -145,7 +145,7 @@ class ScreenItApp:
         self._overlay = None  # release now, so the next hotkey works again
         if overlay is None:
             return
-        image = overlay._shot.crop(rect.x(), rect.y(), rect.width(), rect.height())
+        image = overlay.shot.crop(rect.x(), rect.y(), rect.width(), rect.height())
         try:
             clipboard.copy_image(image)
             self.tray.showMessage(
