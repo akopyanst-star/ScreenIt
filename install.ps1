@@ -4,13 +4,12 @@
     the Start Menu, and launch it. No Python required.
 
 .EXAMPLE
-    irm https://github.com/OWNER/ScreenIt/raw/main/install.ps1 | iex
+    irm https://github.com/akopyanst-star/ScreenIt/raw/main/install.ps1 | iex
 #>
 
 $ErrorActionPreference = 'Stop'
 
-# TODO: replace OWNER with the actual GitHub account once the repo exists.
-$Repo      = 'OWNER/ScreenIt'
+$Repo      = 'akopyanst-star/ScreenIt'
 $InstallDir = Join-Path $env:LOCALAPPDATA 'ScreenIt'
 $ExePath    = Join-Path $InstallDir 'ScreenIt.exe'
 
