@@ -4,7 +4,7 @@
     the Start Menu, and launch it. No Python required.
 
 .EXAMPLE
-    irm https://github.com/akopyanst-star/ScreenIt/raw/main/install.ps1 | iex
+    irm https://github.com/akopyanst-star/ScreenIt/raw/master/install.ps1 | iex
 #>
 
 $ErrorActionPreference = 'Stop'

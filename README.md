@@ -18,7 +18,7 @@ the pixel colour under the cursor — so you can hit the exact edge.
 Run this in PowerShell:
 
 ```powershell
-irm https://github.com/akopyanst-star/ScreenIt/raw/main/install.ps1 | iex
+irm https://github.com/akopyanst-star/ScreenIt/raw/master/install.ps1 | iex
 ```
 
 It downloads the latest `ScreenIt.exe`, adds a Start Menu shortcut, enables
