@@ -14,7 +14,7 @@ DEFAULT_HOTKEY = "Ctrl+Shift+S"
 class Config:
     hotkey: str = DEFAULT_HOTKEY
     # Side length (px) of the magnifier box and how many times it zooms in.
-    magnifier_size: int = 140
+    magnifier_size: int = 280
     magnifier_zoom: int = 8
 
     @classmethod

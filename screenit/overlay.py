@@ -21,7 +21,6 @@ from PySide6.QtWidgets import QWidget
 from .capture import Screenshot
 
 ACCENT = QColor(0, 153, 255)
-DIM = QColor(0, 0, 0, 110)
 MIN_SELECTION = 3  # px; smaller drags are treated as a cancel/click
 
 
@@ -52,7 +51,6 @@ class SelectionOverlay(QWidget):
         self._origin: QPoint | None = None
         self._cursor = QPoint(0, 0)
         self._selecting = False
-        self._mag_corner = "tl"  # loupe anchor: top-left, flips to bottom-right
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -127,15 +125,12 @@ class SelectionOverlay(QWidget):
     # ------------------------------------------------------------------ paint
     def paintEvent(self, _event) -> None:
         painter = QPainter(self)
+        # Screenshot at full brightness — no dimming.
         painter.drawPixmap(0, 0, self._pixmap)
-        painter.fillRect(self.rect(), DIM)
 
         if self._selecting and self._origin is not None:
             rect = self._selection_rect()
-            # Reveal the un-dimmed screenshot inside the selection.
-            painter.drawPixmap(rect, self._pixmap, rect)
-            pen = QPen(ACCENT, 1)
-            painter.setPen(pen)
+            painter.setPen(QPen(ACCENT, 1))
             painter.drawRect(rect.adjusted(0, 0, -1, -1))
 
         self._draw_magnifier(painter)
@@ -144,30 +139,27 @@ class SelectionOverlay(QWidget):
     def _draw_magnifier(self, painter: QPainter) -> None:
         cx, cy = self._cursor.x(), self._cursor.y()
         box = self._mag_size
-        panel_h = 38
+        panel_h = 44
         margin = 24
 
-        # Full-screen crosshair that follows the cursor.
-        painter.setPen(QPen(QColor(0, 153, 255, 160), 1))
-        painter.drawLine(0, cy, self.width(), cy)
-        painter.drawLine(cx, 0, cx, self.height())
+        # Small sight (reticle) at the cursor, with a gap so the target pixel
+        # stays visible — not full-screen lines.
+        gap, arm = 4, 16
+        painter.setPen(QPen(ACCENT, 1))
+        painter.drawLine(cx - arm, cy, cx - gap, cy)
+        painter.drawLine(cx + gap, cy, cx + arm, cy)
+        painter.drawLine(cx, cy - arm, cx, cy - gap)
+        painter.drawLine(cx, cy + gap, cx, cy + arm)
 
-        # Loupe is anchored in a corner; it flips to the opposite corner when
-        # the cursor would land on it, so it never hides what you're aiming at.
+        # Loupe sits in the top-left corner by default and only moves to the
+        # bottom-right while the cursor is over that top-left area.
         total_h = box + panel_h
         tl = QRect(margin, margin, box, total_h)
-        br = QRect(
-            self.width() - margin - box,
-            self.height() - margin - total_h,
-            box,
-            total_h,
-        )
-        current = tl if self._mag_corner == "tl" else br
-        if current.adjusted(-margin, -margin, margin, margin).contains(self._cursor):
-            self._mag_corner = "br" if self._mag_corner == "tl" else "tl"
-            current = tl if self._mag_corner == "tl" else br
-
-        bx, by = current.x(), current.y()
+        if tl.adjusted(-margin, -margin, margin, margin).contains(self._cursor):
+            bx = self.width() - margin - box
+            by = self.height() - margin - total_h
+        else:
+            bx, by = margin, margin
         box_rect = QRect(bx, by, box, box)
 
         sample = max(2, box // self._mag_zoom)
@@ -201,7 +193,7 @@ class SelectionOverlay(QWidget):
         painter.fillRect(QRect(x, y, w, h), QColor(20, 20, 20, 230))
         painter.setPen(QColor(235, 235, 235))
         font = QFont("Consolas")
-        font.setPointSize(8)
+        font.setPointSize(10)
         painter.setFont(font)
 
         color = self._image.pixelColor(
@@ -218,5 +210,5 @@ class SelectionOverlay(QWidget):
         else:
             line2 = "drag to select  -  Esc to cancel"
 
-        painter.drawText(QRect(x + 6, y + 3, w - 12, 16), Qt.AlignmentFlag.AlignLeft, line1)
-        painter.drawText(QRect(x + 6, y + 19, w - 12, 16), Qt.AlignmentFlag.AlignLeft, line2)
+        painter.drawText(QRect(x + 8, y + 5, w - 16, 18), Qt.AlignmentFlag.AlignLeft, line1)
+        painter.drawText(QRect(x + 8, y + 23, w - 16, 18), Qt.AlignmentFlag.AlignLeft, line2)
