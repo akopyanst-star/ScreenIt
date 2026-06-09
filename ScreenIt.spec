@@ -8,7 +8,7 @@ a = Analysis(
     ["app_entry.py"],
     pathex=[],
     binaries=[],
-    datas=[("assets/icon.ico", "assets")],
+    datas=[("assets/icon.ico", "assets"), ("assets/cursor.png", "assets")],
     hiddenimports=collect_submodules("win32"),
     hookspath=[],
     runtime_hooks=[],
