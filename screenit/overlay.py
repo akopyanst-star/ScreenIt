@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ctypes
+
 from PySide6.QtCore import QPoint, QRect, Qt, Signal
 from PySide6.QtGui import (
     QColor,
@@ -50,6 +52,7 @@ class SelectionOverlay(QWidget):
         self._origin: QPoint | None = None
         self._cursor = QPoint(0, 0)
         self._selecting = False
+        self._mag_corner = "tl"  # loupe anchor: top-left, flips to bottom-right
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -66,6 +69,17 @@ class SelectionOverlay(QWidget):
         self.raise_()
         self.activateWindow()
         self.setFocus()
+        # Force the overlay above the taskbar so the tray/taskbar area is also
+        # selectable (a plain stay-on-top window can sit behind the taskbar).
+        try:
+            HWND_TOPMOST = -1
+            SWP_SHOWWINDOW = 0x0040
+            ctypes.windll.user32.SetWindowPos(
+                int(self.winId()), HWND_TOPMOST,
+                self.x(), self.y(), self.width(), self.height(), SWP_SHOWWINDOW,
+            )
+        except Exception:  # noqa: BLE001 - best effort, not fatal
+            pass
 
     # ------------------------------------------------------------------ events
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -130,37 +144,46 @@ class SelectionOverlay(QWidget):
     def _draw_magnifier(self, painter: QPainter) -> None:
         cx, cy = self._cursor.x(), self._cursor.y()
         box = self._mag_size
+        panel_h = 38
+        margin = 24
+
+        # Full-screen crosshair that follows the cursor.
+        painter.setPen(QPen(QColor(0, 153, 255, 160), 1))
+        painter.drawLine(0, cy, self.width(), cy)
+        painter.drawLine(cx, 0, cx, self.height())
+
+        # Loupe is anchored in a corner; it flips to the opposite corner when
+        # the cursor would land on it, so it never hides what you're aiming at.
+        total_h = box + panel_h
+        tl = QRect(margin, margin, box, total_h)
+        br = QRect(
+            self.width() - margin - box,
+            self.height() - margin - total_h,
+            box,
+            total_h,
+        )
+        current = tl if self._mag_corner == "tl" else br
+        if current.adjusted(-margin, -margin, margin, margin).contains(self._cursor):
+            self._mag_corner = "br" if self._mag_corner == "tl" else "tl"
+            current = tl if self._mag_corner == "tl" else br
+
+        bx, by = current.x(), current.y()
+        box_rect = QRect(bx, by, box, box)
+
         sample = max(2, box // self._mag_zoom)
         scale = box / sample
-
         src_left = min(max(cx - sample // 2, 0), max(self._image.width() - sample, 0))
         src_top = min(max(cy - sample // 2, 0), max(self._image.height() - sample, 0))
-
-        panel_h = 38
-        gap = 24
-        total_w, total_h = box, box + panel_h
-        bx = cx + gap
-        by = cy + gap
-        if bx + total_w > self.width():
-            bx = cx - gap - total_w
-        if by + total_h > self.height():
-            by = cy - gap - total_h
-        bx = max(0, bx)
-        by = max(0, by)
-
-        box_rect = QRect(bx, by, box, box)
 
         # Zoomed, non-smoothed pixels.
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
         painter.drawImage(box_rect, self._image, QRect(src_left, src_top, sample, sample))
 
-        # Highlight the exact pixel under the cursor.
+        # Highlight the exact pixel under the cursor + crosshair at its centre.
         hx = bx + (cx - src_left) * scale
         hy = by + (cy - src_top) * scale
         painter.setPen(QPen(QColor(255, 255, 255, 200), 1))
         painter.drawRect(int(hx), int(hy), int(scale), int(scale))
-
-        # Crosshair through the cursor pixel.
         center_x = int(hx + scale / 2)
         center_y = int(hy + scale / 2)
         painter.setPen(QPen(ACCENT, 1))

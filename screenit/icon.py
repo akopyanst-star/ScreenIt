@@ -15,16 +15,16 @@ def _drawn_icon() -> QIcon:
     pm.fill(Qt.GlobalColor.transparent)
     p = QPainter(pm)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    p.setBrush(QColor(30, 32, 36))
+    # Full-bleed accent background.
+    p.setBrush(ACCENT)
     p.setPen(Qt.PenStyle.NoPen)
-    p.drawRoundedRect(QRect(4, 4, 56, 56), 12, 12)
-    # crosshair
-    pen = QPen(ACCENT, 4)
-    p.setPen(pen)
-    p.drawLine(32, 14, 32, 50)
-    p.drawLine(14, 32, 50, 32)
+    p.drawRoundedRect(QRect(1, 1, 62, 62), 12, 12)
+    # Bold white crosshair + selection square.
+    p.setPen(QPen(QColor(255, 255, 255), 6))
+    p.drawLine(32, 8, 32, 56)
+    p.drawLine(8, 32, 56, 32)
     p.setBrush(Qt.BrushStyle.NoBrush)
-    p.drawRect(QRect(20, 20, 24, 24))
+    p.drawRect(QRect(16, 16, 32, 32))
     p.end()
     return QIcon(pm)
 

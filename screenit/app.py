@@ -9,7 +9,7 @@ from ctypes import wintypes
 from PySide6.QtCore import QAbstractNativeEventFilter, QTimer
 from PySide6.QtWidgets import (
     QApplication,
-    QInputDialog,
+    QDialog,
     QMenu,
     QMessageBox,
     QSystemTrayIcon,
@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 from . import __version__, autostart, clipboard, hotkey
 from .capture import grab_virtual_screen
 from .config import Config
+from .hotkey_dialog import HotkeyCaptureDialog
 from .icon import app_icon
 from .overlay import SelectionOverlay
 
@@ -105,14 +106,11 @@ class ScreenItApp:
         return False
 
     def _change_hotkey(self) -> None:
-        text, ok = QInputDialog.getText(
-            None, "ScreenIt - hotkey", "New hotkey (e.g. Ctrl+Shift+S):",
-            text=self.config.hotkey,
-        )
-        if not ok or not text.strip():
+        dialog = HotkeyCaptureDialog(self.config.hotkey)
+        if dialog.exec() != QDialog.DialogCode.Accepted or not dialog.combo:
             return
         old = self.config.hotkey
-        self.config.hotkey = text.strip()
+        self.config.hotkey = dialog.combo
         if self._register_hotkey():
             self.config.save()
             self._capture_action.setText(f"Снять область  ({self.config.hotkey})")

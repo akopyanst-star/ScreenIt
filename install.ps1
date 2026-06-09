@@ -25,12 +25,14 @@ if (-not $asset) { throw "ScreenIt.exe not found in the latest release of $Repo"
 Write-Host "Downloading $($release.tag_name)..."
 Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $ExePath
 
-# Start Menu shortcut.
+# Start Menu + Desktop shortcuts.
+$shell    = New-Object -ComObject WScript.Shell
 $startMenu = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'
-$shell     = New-Object -ComObject WScript.Shell
-$shortcut  = $shell.CreateShortcut((Join-Path $startMenu 'ScreenIt.lnk'))
-$shortcut.TargetPath = $ExePath
-$shortcut.Save()
+foreach ($dir in @($startMenu, [Environment]::GetFolderPath('Desktop'))) {
+    $lnk = $shell.CreateShortcut((Join-Path $dir 'ScreenIt.lnk'))
+    $lnk.TargetPath = $ExePath
+    $lnk.Save()
+}
 
 # Run at logon.
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
