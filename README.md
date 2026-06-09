@@ -65,6 +65,10 @@ Settings live in `%APPDATA%\ScreenIt\config.json`.
 - Mixed-DPI multi-monitor setups (different scaling per screen) may misalign the
   selection; uniform scaling and single monitors are exact.
 
+## Author
+
+Created by **Giroes**.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
