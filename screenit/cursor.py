@@ -13,7 +13,7 @@ from PySide6.QtGui import QCursor, QPixmap
 from .paths import resource_path
 
 # Aim-point centre as a fraction of the source image (assets/cursor.png).
-_HOT_FX, _HOT_FY = 0.193, 0.250
+_HOT_FX, _HOT_FY = 0.217, 0.201
 
 
 def capture_cursor(height: int = 46) -> QCursor:
