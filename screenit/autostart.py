@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 import winreg
+from pathlib import Path
 
 _RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 _VALUE = "ScreenIt"
@@ -17,8 +18,10 @@ def _launch_command() -> str:
     """
     if getattr(sys, "frozen", False):
         return f'"{sys.executable}"'
-    pythonw = sys.executable.replace("python.exe", "pythonw.exe")
-    return f'"{pythonw}" -m screenit'
+    exe = Path(sys.executable)
+    pythonw = exe.with_name("pythonw.exe")  # replace only the file name
+    launcher = pythonw if pythonw.exists() else exe
+    return f'"{launcher}" -m screenit'
 
 
 def is_enabled() -> bool:

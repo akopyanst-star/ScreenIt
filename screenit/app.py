@@ -91,7 +91,7 @@ class ScreenItApp:
         try:
             hk = hotkey.parse_hotkey(self.config.hotkey)
         except hotkey.HotkeyError as exc:
-            self.tray.showMessage("ScreenIt", f"Bad hotkey: {exc}", self._icon, 4000)
+            self.tray.showMessage("ScreenIt", f"Неверная клавиша: {exc}", self._icon, 4000)
             return False
 
         hotkey.unregister(HOTKEY_ID)
@@ -99,8 +99,8 @@ class ScreenItApp:
             return True
 
         msg = (
-            f"Could not register {self.config.hotkey} "
-            "(another app may be using it). Use the tray menu to capture."
+            f"Не удалось назначить {self.config.hotkey} "
+            "(возможно, клавишу занял другой процесс). Снимок — через меню в трее."
         )
         self.tray.showMessage("ScreenIt", msg, self._icon, 5000)
         return False
@@ -153,7 +153,7 @@ class ScreenItApp:
                 self._icon, 1500,
             )
         except Exception as exc:  # noqa: BLE001 - surface any clipboard failure
-            QMessageBox.warning(None, "ScreenIt", f"Copy failed: {exc}")
+            QMessageBox.warning(None, "ScreenIt", f"Не удалось скопировать: {exc}")
 
     def _clear_overlay(self, *_args) -> None:
         self._overlay = None

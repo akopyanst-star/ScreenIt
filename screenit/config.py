@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import asdict, dataclass
 
 from .paths import config_file
@@ -32,7 +33,12 @@ class Config:
         return cls(**{k: v for k, v in data.items() if k in known})
 
     def save(self) -> None:
-        config_file().write_text(
+        # Write to a temp file then atomically replace, so a crash mid-write
+        # can't leave a half-written (corrupt) config.
+        path = config_file()
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(
             json.dumps(asdict(self), indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+        os.replace(tmp, path)

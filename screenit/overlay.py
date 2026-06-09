@@ -58,6 +58,9 @@ class SelectionOverlay(QWidget):
             | Qt.WindowType.WindowStaysOnTopHint
             | Qt.WindowType.Tool
         )
+        # Destroy on close so the full-screen screenshot pixmap/image are
+        # freed immediately instead of lingering until garbage collection.
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         self.setCursor(capture_cursor())
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)

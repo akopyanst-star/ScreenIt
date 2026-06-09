@@ -51,11 +51,14 @@ def _setup_dpi() -> None:
     try:
         # DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
         user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))
-    except Exception:  # noqa: BLE001
+    except Exception as e1:  # noqa: BLE001
         try:
             ctypes.windll.shcore.SetProcessDpiAwareness(2)
-        except Exception:  # noqa: BLE001
-            user32.SetProcessDPIAware()
+        except Exception as e2:  # noqa: BLE001
+            try:
+                user32.SetProcessDPIAware()
+            except Exception as e3:  # noqa: BLE001
+                logging.warning("DPI awareness not set: %s / %s / %s", e1, e2, e3)
 
 
 def main() -> int:
