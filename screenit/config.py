@@ -15,7 +15,7 @@ class Config:
     hotkey: str = DEFAULT_HOTKEY
     # Side length (px) of the magnifier box and how many times it zooms in.
     magnifier_size: int = 280
-    magnifier_zoom: int = 8
+    magnifier_zoom: int = 3
 
     @classmethod
     def load(cls) -> "Config":

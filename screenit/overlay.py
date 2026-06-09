@@ -19,6 +19,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QWidget
 
 from .capture import Screenshot
+from .cursor import capture_cursor
 
 ACCENT = QColor(0, 153, 255)
 MIN_SELECTION = 3  # px; smaller drags are treated as a cancel/click
@@ -57,7 +58,7 @@ class SelectionOverlay(QWidget):
             | Qt.WindowType.WindowStaysOnTopHint
             | Qt.WindowType.Tool
         )
-        self.setCursor(Qt.CursorShape.BlankCursor)
+        self.setCursor(capture_cursor())
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setGeometry(shot.left, shot.top, shot.width, shot.height)
@@ -142,14 +143,7 @@ class SelectionOverlay(QWidget):
         panel_h = 44
         margin = 24
 
-        # Small sight (reticle) at the cursor, with a gap so the target pixel
-        # stays visible — not full-screen lines.
-        gap, arm = 4, 16
-        painter.setPen(QPen(ACCENT, 1))
-        painter.drawLine(cx - arm, cy, cx - gap, cy)
-        painter.drawLine(cx + gap, cy, cx + arm, cy)
-        painter.drawLine(cx, cy - arm, cx, cy - gap)
-        painter.drawLine(cx, cy + gap, cx, cy + arm)
+        # The hand cursor (with its target ring) marks the point; no reticle.
 
         # Loupe sits in the top-left corner by default and only moves to the
         # bottom-right while the cursor is over that top-left area.

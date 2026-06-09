@@ -141,14 +141,15 @@ class ScreenItApp:
             )
 
     def _on_region(self, rect) -> None:
-        assert self._overlay is not None
-        image = self._overlay._shot.crop(
-            rect.x(), rect.y(), rect.width(), rect.height()
-        )
+        overlay = self._overlay
+        self._overlay = None  # release now, so the next hotkey works again
+        if overlay is None:
+            return
+        image = overlay._shot.crop(rect.x(), rect.y(), rect.width(), rect.height())
         try:
             clipboard.copy_image(image)
             self.tray.showMessage(
-                "ScreenIt", f"Copied {rect.width()} x {rect.height()} px to clipboard",
+                "ScreenIt", f"Скопировано {rect.width()} x {rect.height()} px в буфер",
                 self._icon, 1500,
             )
         except Exception as exc:  # noqa: BLE001 - surface any clipboard failure
