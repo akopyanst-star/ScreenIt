@@ -1,18 +1,39 @@
-"""Custom capture cursor: a pointing hand with a target ring at the fingertip.
+"""Custom capture cursor: a pinching hand with a crosshair at the fingertip.
 
-Replaces the plain reticle; the ring marks the exact point being selected and
-its centre is the cursor hotspot. Sized like a normal mouse cursor.
+Mirrors the hand cursor the user asked for — index/thumb pinch (with a hole),
+curled fingers, and a small "+" at the tip which marks the exact point being
+selected (its centre is the cursor hotspot). Sized like a normal mouse cursor.
 """
 
 from __future__ import annotations
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen, QPixmap
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QCursor,
+    QPainter,
+    QPainterPath,
+    QPainterPathStroker,
+    QPen,
+    QPixmap,
+)
 
 _OUTLINE = QColor(35, 35, 40)
 _FILL = QColor(245, 245, 248)
-# Ring centre in the 48x48 design space — used as the hotspot.
-_HOT = (18.7, 8.0)
+# Crosshair centre in the 64x64 design space — used as the hotspot.
+_HOT = (20.0, 13.0)
+
+
+def _stroke(points, width: float) -> QPainterPath:
+    path = QPainterPath(QPointF(*points[0]))
+    for pt in points[1:]:
+        path.lineTo(QPointF(*pt))
+    stroker = QPainterPathStroker()
+    stroker.setWidth(width)
+    stroker.setCapStyle(Qt.PenCapStyle.RoundCap)
+    stroker.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+    return stroker.createStroke(path)
 
 
 def _hand_pixmap(size: int) -> QPixmap:
@@ -20,26 +41,37 @@ def _hand_pixmap(size: int) -> QPixmap:
     pm.fill(Qt.GlobalColor.transparent)
     p = QPainter(pm)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    u = size / 48.0
+    u = size / 64.0
+
+    hand = QPainterPath()
+    hand.addRoundedRect(QRectF(27 * u, 26 * u, 25 * u, 31 * u), 12 * u, 12 * u)  # fingers+palm
+    hand = hand.united(_stroke([(31 * u, 32 * u), (25 * u, 23 * u), (20 * u, 15 * u)], 10 * u))   # index
+    hand = hand.united(_stroke([(31 * u, 43 * u), (24 * u, 33 * u), (19 * u, 25 * u)], 8.5 * u))  # thumb
+    hand = hand.simplified()
+    hole = QPainterPath()
+    hole.addEllipse(QPointF(23.5 * u, 25 * u), 4.6 * u, 6 * u)  # pinch hole
+    hand = hand.subtracted(hole)
+
     p.setPen(QPen(_OUTLINE, 2 * u, Qt.PenStyle.SolidLine,
                   Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
     p.setBrush(QBrush(_FILL))
+    p.drawPath(hand)
 
-    hand = QPainterPath()
-    hand.addRoundedRect(QRectF(13 * u, 23 * u, 24 * u, 20 * u), 8 * u, 8 * u)   # fist
-    hand.addRoundedRect(QRectF(15 * u, 7 * u, 7.5 * u, 22 * u), 3.8 * u, 3.8 * u)  # index
-    for fx in (25.5, 31, 36):                                                   # knuckles
-        hand.addEllipse(QPointF(fx * u, 24 * u), 3.3 * u, 3.8 * u)
-    p.drawPath(hand.simplified())
+    p.setPen(QPen(_OUTLINE, 1.3 * u))  # knuckle separation lines
+    for lx in (35, 41, 47):
+        p.drawLine(QPointF(lx * u, 27 * u), QPointF(lx * u, 34 * u))
 
-    ring = QPainterPath()
-    ring.addEllipse(QPointF(_HOT[0] * u, _HOT[1] * u), 5 * u, 5 * u)
-    ring.addEllipse(QPointF(_HOT[0] * u, _HOT[1] * u), 2.2 * u, 2.2 * u)
-    p.drawPath(ring)
+    cx, cy, arm = _HOT[0] * u, _HOT[1] * u, 6 * u  # crosshair "+"
+    p.setPen(QPen(_FILL, 4 * u, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+    p.drawLine(QPointF(cx - arm, cy), QPointF(cx + arm, cy))
+    p.drawLine(QPointF(cx, cy - arm), QPointF(cx, cy + arm))
+    p.setPen(QPen(_OUTLINE, 1.4 * u))
+    p.drawLine(QPointF(cx - arm, cy), QPointF(cx + arm, cy))
+    p.drawLine(QPointF(cx, cy - arm), QPointF(cx, cy + arm))
     p.end()
     return pm
 
 
-def capture_cursor(size: int = 40) -> QCursor:
-    u = size / 48.0
+def capture_cursor(size: int = 44) -> QCursor:
+    u = size / 64.0
     return QCursor(_hand_pixmap(size), round(_HOT[0] * u), round(_HOT[1] * u))
